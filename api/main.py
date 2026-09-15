@@ -16,7 +16,7 @@ import logging
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -24,6 +24,12 @@ from pydantic import BaseModel, Field
 
 from services.audit_service import AuditInputError, run_audit
 from control_catalog import CATALOG_BY_ID
+from api.rate_limit import (
+    RateLimitExceeded,
+    check_and_register_request,
+    release_audit_slot,
+    try_acquire_audit_slot,
+)
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("websec_auditor")
@@ -77,13 +83,41 @@ def _enrich_finding(finding) -> dict:
     return data
 
 
+def _get_client_ip(request: Request) -> str:
+    """Render (et la plupart des hébergeurs) place l'app derrière un proxy
+    inverse — request.client.host y montrerait l'IP du proxy, pas celle de
+    l'appelant réel. X-Forwarded-For, quand présent, contient la vraie IP
+    en premier ; on s'en sert en priorité, avec repli sur request.client."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
 
 
 @app.post("/audit")
-def audit(request: AuditRequest):
+def audit(request: AuditRequest, http_request: Request):
+    client_ip = _get_client_ip(http_request)
+
+    # Deux protections anti-abus du service LUI-MÊME (distinctes du
+    # rate limiting déjà appliqué côté site audité, cf. collectors/http.py) :
+    # limite de fréquence par IP appelante, puis limite de concurrence
+    # globale — voir api/rate_limit.py pour le détail des deux mécanismes.
+    try:
+        check_and_register_request(client_ip)
+    except RateLimitExceeded as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+
+    if not try_acquire_audit_slot():
+        raise HTTPException(
+            status_code=429,
+            detail="Le service traite déjà le nombre maximal d'audits simultanés. Réessayez dans quelques instants.",
+        )
+
     try:
         payload, key_findings = run_audit(request.url)
     except AuditInputError as exc:
@@ -98,6 +132,8 @@ def audit(request: AuditRequest):
             status_code=500,
             detail="Erreur technique pendant l'audit. Réessayez ou consultez les logs serveur.",
         )
+    finally:
+        release_audit_slot()
 
     response = payload.model_dump(mode="json")
     response["key_findings"] = key_findings

@@ -29,6 +29,16 @@ class TestHealthEndpoint(unittest.TestCase):
 
 
 class TestAuditEndpoint(unittest.TestCase):
+    def setUp(self):
+        # Isole chaque test de l'état interne du rate limiter (module en
+        # mémoire, partagé entre tous les appels dans ce process de test).
+        import api.rate_limit as rl
+        rl._request_log.clear()
+        while rl.try_acquire_audit_slot():
+            pass
+        for _ in range(rl.MAX_CONCURRENT_AUDITS):
+            rl.release_audit_slot()
+
     def test_invalid_scheme_returns_400(self):
         from api.main import app
 
@@ -53,6 +63,53 @@ class TestAuditEndpoint(unittest.TestCase):
         response = client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertIn("WebSec Auditor", response.text)
+
+    @patch("api.main.run_audit")
+    def test_rate_limit_returns_429_after_max_requests_from_same_ip(self, mock_run_audit):
+        import api.rate_limit as rl
+        from api.main import app
+
+        mock_run_audit.side_effect = RuntimeError("boom")  # peu importe le résultat, on ne teste que le 429
+        client = TestClient(app)
+        for _ in range(rl.MAX_REQUESTS_PER_WINDOW):
+            client.post("/audit", json={"url": "https://example.com"})
+        response = client.post("/audit", json={"url": "https://example.com"})
+        self.assertEqual(response.status_code, 429)
+
+    def test_concurrent_audit_limit_returns_429_when_slots_exhausted(self):
+        import api.rate_limit as rl
+        from api.main import app
+
+        client = TestClient(app)
+        # Sature manuellement tous les slots de concurrence, comme le
+        # ferait un nombre suffisant d'audits réellement en cours.
+        for _ in range(rl.MAX_CONCURRENT_AUDITS):
+            self.assertTrue(rl.try_acquire_audit_slot())
+        try:
+            response = client.post("/audit", json={"url": "https://example.com"})
+            self.assertEqual(response.status_code, 429)
+        finally:
+            for _ in range(rl.MAX_CONCURRENT_AUDITS):
+                rl.release_audit_slot()
+
+    def test_failed_audit_still_releases_concurrency_slot(self):
+        """Le slot de concurrence doit être libéré même si l'audit échoue
+        (bloc finally) — sinon un audit en erreur réduirait la capacité du
+        service de façon permanente."""
+        import api.rate_limit as rl
+
+        with patch("api.main.run_audit", side_effect=RuntimeError("boom")):
+            from api.main import app
+
+            client = TestClient(app)
+            client.post("/audit", json={"url": "https://example.com"})
+
+        # Si le slot a bien été libéré, on doit pouvoir en acquérir
+        # MAX_CONCURRENT_AUDITS à nouveau sans blocage.
+        acquired = [rl.try_acquire_audit_slot() for _ in range(rl.MAX_CONCURRENT_AUDITS)]
+        self.assertTrue(all(acquired))
+        for _ in range(rl.MAX_CONCURRENT_AUDITS):
+            rl.release_audit_slot()
 
 
 class TestFindingEnrichment(unittest.TestCase):

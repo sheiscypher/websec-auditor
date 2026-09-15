@@ -115,6 +115,7 @@ python scripts/smoke_test.py https://<votre-service>.onrender.com
 - Aucune exécution de JavaScript, aucun scan de ports, aucune commande shell construite à partir de l'URL.
 - Erreurs techniques jamais transformées silencieusement en verdict de sécurité défavorable (`NOT_TESTABLE` explicite).
 - Aucune trace d'exception brute renvoyée au client (log serveur uniquement).
+- **Anti-abus du endpoint `/audit` lui-même** (`api/rate_limit.py`), distinct du throttle par domaine audité : 5 requêtes / 5 min par IP appelante, et 3 audits simultanés maximum tous appelants confondus (protège la capacité du service même face à des appels distribués sur des IP différentes).
 
 ## Statut du projet
 
