@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WebSec Auditor</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --border: #e2e5ea;
+    --text: #1a1f2b;
+    --muted: #6b7280;
+    --accent: #2453c4;
+    --accent-bg: #eaf0fe;
+    --partial-bg: #fdf3e3;
+    --partial-text: #92620c;
+    --neutral-bg: #eef0f3;
+    --neutral-text: #5a6270;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 100px; }
+  header.topbar { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
+  header.topbar h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .headline { font-size: 26px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .tagline { color: var(--muted); font-size: 14.5px; margin-bottom: 20px; max-width: 640px; }
+  .banner {
+    background: var(--accent-bg); border: 1px solid #cddaf7; padding: 12px 16px;
+    border-radius: 8px; font-size: 13px; color: #1e3a8a; margin-bottom: 28px;
+  }
+  form { display: flex; gap: 8px; margin-bottom: 8px; }
+  input[type="text"] {
+    flex: 1; padding: 11px 14px; background: var(--panel); border: 1px solid #cbd2dc;
+    border-radius: 6px; color: var(--text); font-size: 14.5px;
+  }
+  input[type="text"]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.primary {
+    padding: 11px 20px; background: var(--accent); border: none; border-radius: 6px;
+    color: white; font-weight: 600; cursor: pointer; font-size: 14.5px;
+  }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary {
+    padding: 9px 16px; background: var(--panel); border: 1px solid #cbd2dc; border-radius: 6px;
+    color: var(--text); font-weight: 600; cursor: pointer; font-size: 13.5px;
+  }
+  .error { color: #b3261e; font-size: 13.5px; margin-top: 8px; }
+  .loading { color: var(--muted); margin-top: 14px; font-size: 13.5px; }
+  section.block {
+    margin-top: 28px; padding: 20px 22px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  section.block h2 {
+    margin: 0 0 14px; font-size: 13px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); font-weight: 700;
+  }
+  .report-header { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .report-header .target { font-size: 13px; color: var(--muted); }
+  .axis { margin: 16px 0; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .axis:last-child { border-bottom: none; padding-bottom: 0; }
+  .axis-title { font-size: 14.5px; font-weight: 700; margin-bottom: 4px; }
+  .axis-value { font-size: 22px; font-weight: 700; }
+  .axis-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .axis-note { font-size: 12px; color: var(--muted); margin-top: 6px; font-style: italic; }
+  .bar-bg { height: 8px; background: #edf0f4; border-radius: 4px; overflow: hidden; margin: 8px 0 4px; }
+  .bar-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+  .not-computable { color: var(--partial-text); font-size: 13px; }
+  .key-finding { padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .key-finding:last-child { border-bottom: none; }
+  .key-finding-category {
+    display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.03em; color: var(--accent); background: var(--accent-bg);
+    padding: 2px 8px; border-radius: 10px; margin-bottom: 6px;
+  }
+  .key-finding-constat { font-weight: 600; }
+  .key-finding-recommendation { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .empty-state { color: var(--muted); font-size: 13.5px; }
+  .finding { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .finding:last-child { border-bottom: none; }
+  .badge {
+    flex-shrink: 0; width: 62px; text-align: center; font-size: 10.5px; font-weight: 700;
+    padding: 3px 0; border-radius: 4px; text-transform: uppercase; align-self: flex-start; margin-top: 1px;
+  }
+  .badge.OBSERVED, .badge.ABSENT { background: var(--accent-bg); color: var(--accent); }
+  .badge.PARTIAL { background: var(--partial-bg); color: var(--partial-text); }
+  .badge.NOT_APPLICABLE, .badge.NOT_TESTABLE { background: var(--neutral-bg); color: var(--neutral-text); }
+  .finding-label { flex: 1; }
+  .finding-meta { color: var(--muted); font-size: 11.5px; margin-top: 3px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .finding-meta span { background: var(--neutral-bg); padding: 2px 7px; border-radius: 9px; }
+  .evidence-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .evidence-item:last-child { border-bottom: none; }
+  .evidence-control { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+  .evidence-row { color: var(--muted); margin-top: 2px; }
+  .evidence-row b { color: var(--text); font-weight: 600; }
+  .human-review-item { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .human-review-item:last-child { border-bottom: none; }
+  .methodology-notes { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .domain-chip { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+  @media print {
+    body { background: white; }
+    form, .loading, button.secondary, .no-print { display: none !important; }
+    section.block { break-inside: avoid; border: 1px solid #ccc; }
+    .wrap { max-width: 100%; padding: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar"><h1>WebSec Auditor</h1></header>
+  <div class="headline">Découvrez ce que votre site expose.</div>
+  <div class="tagline">Analyse passive, sans intrusion ni installation. Identifiez les signaux de sécurité,
+    de confidentialité et de gouvernance IA qui méritent votre attention.</div>
+
+  <div class="banner">
+    Analyse passive uniquement. Les résultats indiquent des points à vérifier, pas un état de sécurité
+    ou de conformité.
+  </div>
+
+  <form id="audit-form">
+    <input type="text" id="url-input" placeholder="https://exemple.com" required />
+    <button type="submit" class="primary" id="submit-btn">Lancer l'audit</button>
+  </form>
+  <div class="error" id="error-box" style="display:none;"></div>
+  <div class="loading" id="loading-box" style="display:none;">Audit en cours — collecte et analyse passives (jusqu'à 90 secondes)…</div>
+
+  <div id="results" style="display:none;">
+    <section class="block" id="block-synthese">
+      <div class="report-header">
+        <h2 style="margin:0;">Synthèse</h2>
+        <div class="no-print"><button class="secondary" id="print-btn">Télécharger le rapport</button></div>
+      </div>
+      <div class="target" id="target-url"></div>
+      <div class="axis" id="axis-security"></div>
+      <div class="axis" id="axis-privacy"></div>
+      <div class="axis" id="axis-ai"></div>
+    </section>
+
+    <section class="block">
+      <h2>Points d'attention prioritaires</h2>
+      <div id="key-findings-list"></div>
+    </section>
+
+    <section class="block">
+      <h2>Contrôles</h2>
+      <div id="findings-list"></div>
+    </section>
+
+    <section class="block">
+      <h2>Preuves techniques</h2>
+      <div id="evidence-list"></div>
+    </section>
+
+    <section class="block">
+      <h2>Vérification humaine requise</h2>
+      <div id="human-review-list"></div>
+    </section>
+
+    <section class="block">
+      <h2>Limites méthodologiques</h2>
+      <div class="methodology-notes" id="methodology-notes"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById("audit-form");
+const urlInput = document.getElementById("url-input");
+const submitBtn = document.getElementById("submit-btn");
+const errorBox = document.getElementById("error-box");
+const loadingBox = document.getElementById("loading-box");
+const resultsBox = document.getElementById("results");
+
+const DOMAIN_LABELS_FR = { SECURITY: "Sécurité", PRIVACY: "Confidentialité", AI_GOVERNANCE: "Signaux IA" };
+const RESULT_LABELS_FR = {
+  OBSERVED: "OBSERVÉ", ABSENT: "ABSENT", PARTIAL: "PARTIEL",
+  NOT_APPLICABLE: "N/A", NOT_TESTABLE: "INCONNU",
+};
+
+function badgeClassFor(result) {
+  return result;
+}
+function badgeLabelFor(result) {
+  return RESULT_LABELS_FR[result] || result;
+}
+
+function renderSecurityAxis(axis) {
+  const el = document.getElementById("axis-security");
+  if (!axis || axis.status === "NOT_COMPUTABLE") {
+    el.innerHTML = '<div class="axis-title">Web Security Signals</div>' +
+      '<div class="not-computable">Non calculable — preuves insuffisantes sur cet audit.</div>';
+    return;
+  }
+  const score = Math.round(axis.score);
+  const applicable = axis.contributing_controls.length;
+  el.innerHTML =
+    '<div class="axis-title">Web Security Signals</div>' +
+    '<div class="axis-value">' + score + '/100</div>' +
+    '<div class="bar-bg"><div class="bar-fill" style="width:' + score + '%"></div></div>' +
+    '<div class="axis-meta">Basé sur ' + applicable + '/8 contrôles applicables à cette cible.</div>' +
+    '<div class="axis-note">Mesure la présence de pratiques de configuration technique de base, publiquement ' +
+    'observables — ne mesure ni le niveau global de sécurité, ni la probabilité de compromission, ni un ' +
+    'niveau de conformité. Ne couvre pas l\'authentification, la gestion de session, ni les vulnérabilités ' +
+    'applicatives (injection, contrôle d\'accès).</div>';
+}
+
+function renderPrivacyAxis(axis) {
+  const el = document.getElementById("axis-privacy");
+  if (!axis || axis.status === "NOT_COMPUTABLE") {
+    el.innerHTML = '<div class="axis-title">Privacy Technical Signals</div>' +
+      '<div class="not-computable">Non calculable — preuves insuffisantes sur cet audit.</div>';
+    return;
+  }
+  const total = axis.contributing_controls.length;
+  const favorable = axis.contributing_controls.filter(function(c) { return c.result === "OBSERVED"; }).length;
+  el.innerHTML =
+    '<div class="axis-title">Privacy Technical Signals</div>' +
+    '<div class="axis-value">' + (axis.signal_level || "") + '</div>' +
+    '<div class="axis-meta">' + favorable + '/' + total + ' éléments observables détectés (pages légales, CMP).</div>' +
+    '<div class="axis-note">Mesure la présence de signaux techniques observables, pas une évaluation de ' +
+    'conformité RGPD. L\'absence d\'un signal ne constitue pas une preuve de non-conformité.</div>';
+}
+
+function renderAiAxis(panel) {
+  const el = document.getElementById("axis-ai");
+  el.innerHTML =
+    '<div class="axis-title">AI &amp; Governance Signals</div>' +
+    '<div class="axis-meta">' + panel.signals_observed_count + '/' + panel.signals_total_count +
+    ' signaux observés sur la surface publique — n\'indique pas l\'absence d\'usage de l\'IA.</div>' +
+    '<div class="axis-note">Jamais scoré. Ces signaux ne permettent aucune conclusion de conformité ou de ' +
+    'classification au regard de l\'AI Act.</div>';
+}
+
+function renderKeyFindings(keyFindings) {
+  const el = document.getElementById("key-findings-list");
+  if (!keyFindings || keyFindings.length === 0) {
+    el.innerHTML = '<div class="empty-state">Aucun résultat défavorable parmi les contrôles scorés sur cet audit.</div>';
+    return;
+  }
+  el.innerHTML = keyFindings.map(function(kf) {
+    return '<div class="key-finding">' +
+      (kf.risk_category ? '<div class="key-finding-category">' + kf.risk_category + '</div>' : '') +
+      '<div class="key-finding-constat">' + kf.constat + '</div>' +
+      (kf.recommendation ? '<div class="key-finding-recommendation">' + kf.recommendation + '</div>' : '') +
+      '</div>';
+  }).join("");
+}
+
+function renderFindings(findings) {
+  const el = document.getElementById("findings-list");
+  el.innerHTML = findings.map(function(f) {
+    const badgeClass = badgeClassFor(f.result);
+    const badgeLabel = badgeLabelFor(f.result);
+    const scoredLabel = f.scoring_status === "INCLUDED"
+      ? "scoré (poids " + (f.weight * 100).toFixed(1) + "%)"
+      : "informatif — non scoré";
+    return '<div class="finding">' +
+      '<div class="badge ' + badgeClass + '">' + badgeLabel + '</div>' +
+      '<div class="finding-label">' + f.resolved_label +
+      '<div class="finding-meta">' +
+      '<span class="domain-chip">' + (DOMAIN_LABELS_FR[f.domain] || f.domain) + '</span>' +
+      '<span>' + (f.report_label || f.control_id) + '</span>' +
+      '<span>Preuve : niveau ' + (f.evidence_level || "?") + '</span>' +
+      '<span>' + scoredLabel + '</span>' +
+      '</div></div></div>';
+  }).join("");
+}
+
+function renderEvidence(findings) {
+  const el = document.getElementById("evidence-list");
+  el.innerHTML = findings.map(function(f) {
+    return '<div class="evidence-item">' +
+      '<div class="evidence-control">' + (f.report_label || f.control_id) + '</div>' +
+      '<div class="evidence-row"><b>Preuve :</b> ' + (f.evidence || "—") + '</div>' +
+      '<div class="evidence-row"><b>Méthode :</b> ' + (f.detection_method || "—") + '</div>' +
+      (f.limitation ? '<div class="evidence-row"><b>Limite :</b> ' + f.limitation + '</div>' : '') +
+      (f.reference ? '<div class="evidence-row"><b>Référence :</b> ' + f.reference + '</div>' : '') +
+      '</div>';
+  }).join("");
+}
+
+function renderHumanReview(findings) {
+  const el = document.getElementById("human-review-list");
+  const toReview = findings.filter(function(f) { return f.evidence_level === "C"; });
+  if (toReview.length === 0) {
+    el.innerHTML = '<div class="empty-state">Aucun élément de niveau de preuve C sur cet audit.</div>';
+    return;
+  }
+  el.innerHTML = toReview.map(function(f) {
+    return '<div class="human-review-item">' +
+      '<div class="key-finding-constat">' + f.resolved_label + '</div>' +
+      '<div class="finding-meta"><span>' + (f.report_label || f.control_id) + '</span></div>' +
+      '</div>';
+  }).join("");
+}
+
+form.addEventListener("submit", async function(e) {
+  e.preventDefault();
+  errorBox.style.display = "none";
+  resultsBox.style.display = "none";
+  loadingBox.style.display = "block";
+  submitBtn.disabled = true;
+
+  try {
+    const res = await fetch("/audit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: urlInput.value.trim() }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.detail || "Erreur inconnue.");
+    }
+
+    document.getElementById("target-url").textContent = data.url;
+
+    renderSecurityAxis(data.score_breakdown.security_posture);
+    renderPrivacyAxis(data.score_breakdown.privacy_signals);
+    renderAiAxis(data.score_breakdown.ai_governance);
+
+    renderKeyFindings(data.key_findings);
+    renderFindings(data.findings);
+    renderEvidence(data.findings);
+    renderHumanReview(data.findings);
+
+    document.getElementById("methodology-notes").innerHTML =
+      data.score_breakdown.methodology_notes.map(function(n) { return "<div>• " + n + "</div>"; }).join("");
+
+    resultsBox.style.display = "block";
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.style.display = "block";
+  } finally {
+    loadingBox.style.display = "none";
+    submitBtn.disabled = false;
+  }
+});
+
+const printBtn = document.getElementById("print-btn");
+if (printBtn) {
+  printBtn.addEventListener("click", function() { window.print(); });
+}
+</script>
+</body>
+</html>
