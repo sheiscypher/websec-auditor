@@ -102,9 +102,43 @@
   .human-review-item:last-child { border-bottom: none; }
   .methodology-notes { font-size: 13px; color: var(--muted); line-height: 1.7; }
   .domain-chip { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+
+  .site-footer {
+    margin-top: 56px;
+    padding: 32px 20px 40px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+  .footer-inner { max-width: 640px; margin: 0 auto; }
+  .footer-heading {
+    margin: 0 0 6px; font-size: 13px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); font-weight: 700;
+  }
+  .footer-author { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .footer-bio {
+    font-size: 13.5px; color: var(--text); line-height: 1.65;
+    text-align: left; margin: 0 0 16px;
+  }
+  .footer-links { font-size: 13px; margin-bottom: 22px; }
+  .footer-links a { color: var(--accent); text-decoration: none; }
+  .footer-links a:hover { text-decoration: underline; }
+  .footer-sep { color: var(--border); margin: 0 8px; }
+  .footer-certs-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px;
+  }
+  .footer-certs { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-bottom: 18px; }
+  .cert-chip {
+    font-size: 11px; color: var(--neutral-text); background: var(--neutral-bg);
+    padding: 4px 10px; border-radius: 12px; display: inline-block;
+  }
+  .cert-chip-link { color: var(--accent); background: var(--accent-bg); text-decoration: none; cursor: pointer; }
+  .cert-chip-link:hover { text-decoration: underline; }
+  .footer-note { font-size: 11.5px; color: var(--muted); margin-top: 10px; }
+
   @media print {
     body { background: white; }
-    form, .loading, button.secondary, .no-print { display: none !important; }
+    form, .loading, button.secondary, .no-print, .site-footer { display: none !important; }
     section.block { break-inside: avoid; border: 1px solid #ccc; }
     .wrap { max-width: 100%; padding: 0; }
   }
@@ -167,6 +201,37 @@
     </section>
   </div>
 </div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <h2 class="footer-heading">Qui suis-je</h2>
+    <div class="footer-author">Iman M — GRC &amp; Cybersecurity Consultant</div>
+    <p class="footer-bio">
+      Après 12 ans de conseil et de management dans le SaaS (B2B/B2C, santé, banque), je me spécialise
+      aujourd'hui dans la cybersécurité et la GRC (Gouvernance, Risques, Conformité). Certifiée Pentest,
+      formée sur les référentiels ANSSI, CNIL et EBIOS Risk Manager, je conçois des outils qui traduisent
+      le technique en langage risque — comme celui-ci, un projet de portfolio.
+    </p>
+    <div class="footer-links">
+      <a href="https://www.linkedin.com/in/pingiman/" target="_blank" rel="noopener">LinkedIn</a>
+      <span class="footer-sep">·</span>
+      <a href="https://github.com/sheiscypher" target="_blank" rel="noopener">GitHub</a>
+      <span class="footer-sep">·</span>
+      <a href="https://github.com/sheiscypher/websec-auditor" target="_blank" rel="noopener">Code source de ce projet</a>
+    </div>
+
+    <div class="footer-certs-label">Certifications</div>
+    <div class="footer-certs">
+      <span class="cert-chip">MOOC ANSSI · 2024</span>
+      <span class="cert-chip">MOOC CNIL · 2024</span>
+      <span class="cert-chip">MOOC EBIOS Risk Manager · 2025</span>
+      <a class="cert-chip cert-chip-link" href="https://www.credly.com/badges/b898e22f-1f90-4aab-83e5-b4c95a6aec5f" target="_blank" rel="noopener">Cisco Junior Cybersecurity Analyst · 2025</a>
+      <span class="cert-chip">Pentesting RS7394 · 2026</span>
+    </div>
+
+    <div class="footer-note">Projet de portfolio — analyse passive de surface d'exposition, cybersécurité &amp; GRC.</div>
+  </div>
+</footer>
 
 <script>
 const form = document.getElementById("audit-form");
