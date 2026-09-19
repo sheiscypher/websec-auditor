@@ -9,6 +9,8 @@ Outil d'aide au diagnostic et de **pré-audit passif** d'un site web : posture d
 
 Projet de portfolio cybersécurité / GRC — conçu pour démontrer une méthodologie de contrôle rigoureuse, pas pour remplacer un audit professionnel.
 
+**Vitrine** : [sheiscypher.github.io/websec-auditor](https://sheiscypher.github.io/websec-auditor/) · **Démo en ligne** : [websec-auditor.onrender.com](https://websec-auditor.onrender.com/) · **Méthodologie** : [`SPEC.md`](./SPEC.md)
+
 ## Ce que cet outil N'EST PAS
 
 - **Ce n'est pas un test d'intrusion.** Aucune exploitation, aucun fuzzing, aucun bruteforce. Uniquement des requêtes HTTP passives (GET/HEAD) et des résolutions DNS.
@@ -64,7 +66,7 @@ Application monolithique volontairement simple : pas de queue, pas de worker sé
 ## Lancer en local
 
 ```bash
-git clone <repository>
+git clone https://github.com/sheiscypher/websec-auditor.git
 cd websec-auditor
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
@@ -116,6 +118,15 @@ python scripts/smoke_test.py https://<votre-service>.onrender.com
 - Erreurs techniques jamais transformées silencieusement en verdict de sécurité défavorable (`NOT_TESTABLE` explicite).
 - Aucune trace d'exception brute renvoyée au client (log serveur uniquement).
 - **Anti-abus du endpoint `/audit` lui-même** (`api/rate_limit.py`), distinct du throttle par domaine audité : 5 requêtes / 5 min par IP appelante, et 3 audits simultanés maximum tous appelants confondus (protège la capacité du service même face à des appels distribués sur des IP différentes).
+
+## Données traitées par l'outil
+
+- **Aucune persistance** : pas de base de données, aucun résultat d'audit écrit sur disque. Chaque audit est calculé à la demande et renvoyé dans la réponse.
+- **Adresse IP de l'appelant** : conservée en mémoire du processus pour la limitation de débit (`api/rate_limit.py`), jamais écrite sur disque, effacée au redémarrage.
+- **URL auditée** : écrite dans les logs serveur uniquement lors d'une erreur technique inattendue (`api/main.py`), pas en fonctionnement normal.
+- **Journaux de l'hébergeur** : Render et uvicorn peuvent enregistrer des métadonnées de requête (adresse, chemin) en dehors du contrôle de l'application.
+- **Frontend** : aucun cookie, aucun stockage navigateur, aucun script ni police tiers. Les seuls liens externes sont des liens sortants.
+- **CORS ouvert par défaut** (`ALLOWED_ORIGINS=*`) : choix assumé pour un outil public en lecture seule, sans session. À restreindre si le frontend est un jour servi depuis un autre domaine.
 
 ## Statut du projet
 

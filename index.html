@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WebSec Auditor : pré-audit passif pour consultants GRC et cybersécurité</title>
-<meta name="description" content="Outil open source de pré-audit passif : posture de sécurité, signaux techniques de confidentialité et signaux de gouvernance IA d'un site web. Projet de portfolio, ni pentest ni certification.">
+<meta name="description" content="Outil open source de pré-audit passif : Web Security Signals, Privacy Technical Signals et AI &amp; Governance Signals. Projet de portfolio, ni pentest ni certification.">
 <meta property="og:title" content="WebSec Auditor : pré-audit passif">
 <meta property="og:description" content="Un diagnostic passif du site d'un client en quelques minutes, avec des limites clairement posées.">
 <meta property="og:type" content="website">
@@ -111,7 +111,7 @@
   .bar i { display: block; height: 100%; background: var(--accent); }
 
   ul.checks { list-style: none; margin: 0; padding: 0; font-size: 0.925rem; }
-  ul.checks li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.3rem 0; border-top: 1px dashed var(--line); }
+  ul.checks li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.15rem 1rem; padding: 0.3rem 0; border-top: 1px dashed var(--line); }
   ul.checks li:first-child { border-top: 0; }
   .st { font-weight: 600; white-space: nowrap; }
   .st.ok { color: var(--ok); }
@@ -119,10 +119,11 @@
   .st.info { color: var(--muted); }
 
   .block.unscored { background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(17, 24, 39, 0.045) 10px 11px); }
-  .unscored .tag {
+  .tag {
     font-size: 0.85rem; font-weight: 600; color: var(--muted);
-    border: 1px dashed var(--muted); padding: 0.15rem 0.6rem; border-radius: 4px; white-space: nowrap;
+    border: 1px dashed var(--muted); padding: 0.15rem 0.6rem; border-radius: 4px; text-align: right;
   }
+  .meta { font-size: 0.85rem; color: var(--muted); margin: -0.3rem 0 0.8rem; }
   .caveat { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0; }
   .report-foot { padding: 0.75rem 1.25rem; font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--line); background: var(--subtle); }
 
@@ -172,7 +173,7 @@
       <h1>Un pré-audit passif.</h1>
       <p class="lede">
         Entrez l'adresse d'un site. L'outil observe ce qui est publiquement visible et produit un rapport
-        en trois blocs : posture de sécurité, signaux techniques de confidentialité, signaux de gouvernance IA.
+        en trois blocs : Web Security Signals, Privacy Technical Signals et AI &amp; Governance Signals.
       </p>
       <div class="actions">
         <a class="btn primary" href="https://websec-auditor.onrender.com/">Lancer un audit</a>
@@ -193,47 +194,54 @@
 
       <section class="block" aria-labelledby="b1">
         <div class="block-top">
-          <h2 id="b1">Posture de sécurité</h2>
-          <span class="score">72 <small>/ 100</small></span>
+          <h2 id="b1">Web Security Signals</h2>
+          <span class="score">64 <small>/ 100</small></span>
         </div>
-        <div class="bar" role="img" aria-label="Score de 72 sur 100"><i style="width:72%"></i></div>
+        <div class="bar" role="img" aria-label="Score de 64 sur 100"><i style="width:64%"></i></div>
+        <p class="meta">7/8 contrôles applicables</p>
         <ul class="checks">
-          <li><span>Redirection HTTPS et HSTS</span><span class="st ok">Présent</span></li>
-          <li><span>Content-Security-Policy</span><span class="st warn">Absent</span></li>
-          <li><span>X-Content-Type-Options</span><span class="st ok">Présent</span></li>
+          <li><span>En-têtes de sécurité HTTP</span><span class="st warn">Partiel</span></li>
+          <li><span>Configuration TLS</span><span class="st ok">Observé</span></li>
+          <li><span>Chemins sensibles testés</span><span class="st ok">Aucun accessible</span></li>
+          <li><span>Motifs de secrets potentiels</span><span class="st ok">Aucun détecté</span></li>
+          <li><span>DNSSEC</span><span class="st warn">Point d'attention</span></li>
+          <li><span>Sécurité e-mail (SPF/DMARC)</span><span class="st warn">Partiel</span></li>
+          <li><span>Intégrité des ressources tierces (SRI)</span><span class="st info">Non déterminable</span></li>
           <li><span>Attributs de sécurité des cookies</span><span class="st warn">Partiel</span></li>
         </ul>
+        <p class="caveat">« Non déterminable » sort du calcul : son poids est redistribué, il n'est jamais compté comme un échec.</p>
       </section>
 
       <section class="block" aria-labelledby="b2">
         <div class="block-top">
-          <h2 id="b2">Signaux techniques de confidentialité</h2>
-          <span class="score">58 <small>/ 100</small></span>
+          <h2 id="b2">Privacy Technical Signals</h2>
+          <span class="tag">Signaux partiels</span>
         </div>
-        <div class="bar" role="img" aria-label="Score de 58 sur 100"><i style="width:58%"></i></div>
         <ul class="checks">
-          <li><span>Politique de confidentialité référencée</span><span class="st ok">Présent</span></li>
-          <li><span>Mécanisme de consentement détecté</span><span class="st ok">Présent</span></li>
-          <li><span>Ressources tierces identifiées</span><span class="st info">4 domaines</span></li>
-          <li><span>Cookies présents au premier chargement</span><span class="st warn">2 à examiner</span></li>
+          <li><span>Politique de confidentialité</span><span class="st ok">Observé</span></li>
+          <li><span>Mentions légales</span><span class="st ok">Observé</span></li>
+          <li><span>Plateforme de gestion du consentement (CMP)</span><span class="st warn">Point d'attention</span></li>
+          <li><span>Trackers tiers détectés (informatif)</span><span class="st info">3 signaux détectés</span></li>
         </ul>
-        <p class="caveat">Ce score mesure des signaux techniques. Il ne dit rien de la conformité au RGPD.</p>
+        <p class="caveat">Échelle qualitative, sans lettre ni note de conformité. Ces signaux ne disent rien de la conformité au RGPD.</p>
       </section>
 
       <section class="block unscored" aria-labelledby="b3">
         <div class="block-top">
-          <h2 id="b3">Signaux IA et gouvernance</h2>
-          <span class="tag">Non noté, volontairement</span>
+          <h2 id="b3">AI &amp; Governance Signals</h2>
+          <span class="tag">1 signal observé / 5 contrôles disponibles</span>
         </div>
         <ul class="checks">
-          <li><span>Directives robots.txt pour crawlers IA</span><span class="st info">Présent</span></li>
-          <li><span>Fichier llms.txt</span><span class="st info">Absent</span></li>
-          <li><span>Mention publique d'un usage d'IA</span><span class="st info">Non détectée</span></li>
+          <li><span>Fichier llms.txt</span><span class="st info">Non détecté</span></li>
+          <li><span>Directives bots IA (robots.txt)</span><span class="st info">Signal détecté</span></li>
+          <li><span>Interface conversationnelle détectée</span><span class="st info">Non détecté</span></li>
+          <li><span>Mention publique d'usage de l'IA</span><span class="st info">Non détecté</span></li>
+          <li><span>Documentation de gouvernance IA publique</span><span class="st info">Non détecté</span></li>
         </ul>
-        <p class="caveat">La présence ou l'absence d'un signal ne permet ni de classer un système ni d'établir une conformité à l'AI Act.</p>
+        <p class="caveat">Jamais scoré. La présence ou l'absence d'un signal ne permet ni de classer un système ni d'établir une conformité à l'AI Act.</p>
       </section>
 
-      <div class="report-foot">Exemple fabriqué pour illustrer le format. Aucun site réel n'est évalué ici.</div>
+      <div class="report-foot">Exemple fabriqué pour illustrer le format et les règles de calcul. Aucun site réel n'est évalué ici.</div>
     </article>
   </div>
 
@@ -244,16 +252,18 @@
         <div class="yes">
           <h3>Il fait</h3>
           <ul>
-            <li>Une observation passive : uniquement ce qu'un visiteur ordinaire peut voir.</li>
-            <li>Un premier tour d'horizon pour cadrer un échange avec un client ou préparer une mission.</li>
-            <li>Un rapport qui sépare ce qui est mesuré de ce qui est seulement signalé.</li>
+            <li>Une observation passive : uniquement ce qu'un visiteur ordinaire peut voir, par requêtes GET/HEAD et résolutions DNS.</li>
+            <li>Un premier tour d'horizon pour cadrer une première lecture d'un site.</li>
+            <li>Un rapport qui sépare ce qui est mesuré de ce qui est seulement signalé, et qui indique « non déterminable » plutôt qu'un verdict défavorable quand l'analyse passive ne suffit pas.</li>
+            <li>Aucun résultat conservé : pas de base de données.</li>
           </ul>
         </div>
         <div class="no">
           <h3>Il ne fait pas</h3>
           <ul>
             <li>Un test d'intrusion : aucune exploitation, aucun contournement.</li>
-            <li>Une certification ou une attestation de conformité, de sécurité ou de RGPD.</li>
+            <li>Une certification de sécurité, ni une évaluation de conformité RGPD ou AI Act.</li>
+            <li>Un avis juridique, ni le travail d'un consultant, d'un auditeur ou d'un DPO.</li>
             <li>Un service commercial : c'est un projet de portfolio open source.</li>
           </ul>
         </div>
@@ -263,26 +273,31 @@
 
   <section class="band" aria-labelledby="regles">
     <div class="wrap">
-      <h2 id="regles">Trois blocs, trois règles de lecture</h2>
+      <h2 id="regles">Comment lire le rapport</h2>
       <dl class="rules">
-        <dt>Posture de sécurité</dt>
-        <dd>Notée. Des contrôles techniques observables, avec une méthode de calcul documentée dans le dépôt.</dd>
-        <dt>Signaux de confidentialité</dt>
-        <dd>Notée, mais nommée « signaux techniques » et non « score de conformité ». Un signal technique ne remplace pas l'analyse d'un DPO.</dd>
-        <dt>Signaux IA et gouvernance</dt>
-        <dd>Jamais notée. Ces signaux informent, ils ne qualifient pas un système au regard de l'AI Act.</dd>
+        <dt>Web Security Signals</dt>
+        <dd>Huit contrôles scorés, à poids égal. Un contrôle non déterminable sort du calcul et son poids est redistribué : le rapport affiche « X/8 contrôles applicables » à côté du score. Si aucun contrôle n'est évaluable, l'axe est marqué non calculable au lieu d'être noté.</dd>
+        <dt>Privacy Technical Signals</dt>
+        <dd>Trois contrôles scorés : politique de confidentialité, mentions légales, plateforme de gestion du consentement. Restitution qualitative (signaux limités, partiels ou étendus), volontairement sans lettre ni note de conformité.</dd>
+        <dt>AI &amp; Governance Signals</dt>
+        <dd>Jamais scorés. Le rapport affiche « X signaux observés / Y contrôles disponibles », sans classification ni conclusion réglementaire.</dd>
+        <dt>Niveaux de preuve</dt>
+        <dd>Chaque contrôle porte un niveau de preuve, de A à D. Les niveaux C et D ne donnent lieu à aucune recommandation automatique ; le niveau C est listé pour vérification humaine.</dd>
       </dl>
+      <p class="hint">La méthode complète, les pondérations et les limites sont dans <a href="https://github.com/sheiscypher/websec-auditor/blob/main/SPEC.md">SPEC.md</a>.</p>
     </div>
   </section>
 </main>
 
 <footer class="bottom">
   <div class="wrap">
-    <span>Licence MIT. Projet de portfolio par <a href="https://github.com/sheiscypher">sheiscypher</a>.</span>
+    <span>Licence MIT. Projet de portfolio V1 par <a href="https://github.com/sheiscypher">sheiscypher</a>.</span>
     <span>
       <a href="https://github.com/sheiscypher/websec-auditor">Code source</a>
       &nbsp;/&nbsp;
       <a href="https://websec-auditor.onrender.com/">Démo en ligne</a>
+      &nbsp;/&nbsp;
+      <a href="https://www.linkedin.com/in/pingiman/">LinkedIn</a>
     </span>
   </div>
 </footer>

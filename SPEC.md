@@ -278,7 +278,7 @@ Formulations imposées selon le niveau de preuve : *"Contrôle technique observ�
 
 ## 12. Architecture technique (rappel — inchangée par ce document)
 
-Mono-process, SQLite (pas de Redis ni d'architecture distribuée sans nécessité démontrée), modules de contrôle indépendants, moteur de scoring centralisé dans `scoring.py` selon l'algorithme de la section 7.3, génération de rapport à partir d'un unique payload. Le détail complet (arborescence, API, déploiement) reste celui du document de conception V2 précédent, non remis en cause ici.
+Mono-process, sans base de données ni persistance des résultats (pas de Redis ni d'architecture distribuée sans nécessité démontrée), modules de contrôle indépendants, moteur de scoring centralisé dans `scoring.py` selon l'algorithme de la section 7.3, génération de rapport à partir d'un unique payload. Le détail complet (arborescence, API, déploiement) reste celui du document de conception V2 précédent, non remis en cause ici.
 
 ---
 
