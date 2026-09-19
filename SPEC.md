@@ -1,14 +1,14 @@
-# WebSec Auditor V2 — SPEC.md
+# WebSec Auditor V1 — SPEC.md
 
 *Document de référence unique. Toute divergence entre le code et ce document doit être résolue en révisant ce document en premier, jamais en s'y référant implicitement.*
 
-Version 2.0-spec | Statut : modèle fonctionnel verrouillé | Aucune implémentation de pipeline à ce stade.
+Version 1.0 | Statut : modèle fonctionnel verrouillé, implémenté (voir README.md).
 
 ---
 
 ## 1. Positionnement du produit
 
-WebSec Auditor V2 est un **outil d'aide au diagnostic et de pré-audit passif**, destiné en priorité à des consultants GRC, DPO et analystes cybersécurité pour cadrer rapidement une première lecture d'un site web.
+WebSec Auditor V1 est un **outil d'aide au diagnostic et de pré-audit passif**, destiné en priorité à des consultants GRC, DPO et analystes cybersécurité pour cadrer rapidement une première lecture d'un site web.
 
 Ce n'est **pas** un SaaS commercial. C'est un projet de portfolio devant être professionnel, cohérent et techniquement crédible, sans chercher à couvrir tous les cas d'usage.
 
@@ -61,7 +61,7 @@ Il n'existe **aucun score global fusionnant les trois domaines**. Si les scores 
 | **C** | Nécessite un jugement humain, métier ou juridique |
 | **D** | Non concluable depuis un audit passif d'un site public |
 
-Principe directeur : **plus le niveau de preuve est faible, moins l'outil formule de conclusion.** Un contrôle B ne devient jamais une certitude dans le wording. Un contrôle C n'est jamais transformé en conclusion automatisée. Les contrôles D ne sont pas implémentés — ils sont cités dans les limites méthodologiques (section 10) pour couper court à toute attente.
+Principe directeur : **plus le niveau de preuve est faible, moins l'outil formule de conclusion.** Un contrôle B ne devient jamais une certitude dans le wording. Un contrôle C n'est jamais transformé en conclusion automatisée. Les contrôles D ne sont pas implémentés — ils sont cités dans les limites méthodologiques (section 11) pour couper court à toute attente.
 
 ---
 
@@ -107,11 +107,11 @@ Distinction impérative entre `NOT_APPLICABLE` (structurel, propre à la cible) 
 Méthode retenue pour le MVP : **équipondération** entre tous les contrôles `INCLUDED` d'un même axe (poids = `1 / nombre de contrôles INCLUDED de l'axe`).
 
 Justification à conserver telle quelle dans toute communication sur le projet (README, entretien) :
-> *En l'absence de données empiriques (fréquence réelle d'exploitation, retour d'incidents) permettant de justifier objectivement une pondération différenciée entre contrôles, la V2 applique une pondération égale entre tous les contrôles inclus dans chaque axe. Ce choix est documenté pour être révisé, pas pour être caché.*
+> *En l'absence de données empiriques (fréquence réelle d'exploitation, retour d'incidents) permettant de justifier objectivement une pondération différenciée entre contrôles, la V1 applique une pondération égale entre tous les contrôles inclus dans chaque axe. Ce choix est documenté pour être révisé, pas pour être caché.*
 
 Toute évolution vers une pondération différenciée (V2.1+) doit s'appuyer sur un référentiel écrit et versionné avant d'être appliquée au moteur — jamais de poids ajusté "à l'intuition" dans le code.
 
-### 7.3 Algorithme de calcul d'un axe (spécification, pour implémentation ultérieure dans `scoring.py`)
+### 7.3 Algorithme de calcul d'un axe (implémenté dans `scoring.py`)
 
 ```
 fonction calculer_score_axe(contrôles_du_catalogue, résultats_de_l_audit):
@@ -169,8 +169,8 @@ Définition méthodologique verrouillée : *Cet indicateur mesure la présence d
 
 | control_id | evidence_level | scoring_status | Logique de scoring | NOT_TESTABLE / NOT_APPLICABLE | Libellé rapport |
 |---|---|---|---|---|---|
-| `sec.headers` | A | INCLUDED | `(nb en-têtes corrects / 6) × 100` — critères déterministes section 8.4 | Connexion impossible avant lecture des headers → `NOT_TESTABLE` | En-têtes de sécurité HTTP |
-| `sec.tls` | A | INCLUDED | `OBSERVED`=100, `PARTIAL`=50, `ABSENT` (critique)=0 + hard cap — critères section 8.5 | Échec handshake réseau (timeout/reset) → `NOT_TESTABLE` | Configuration TLS |
+| `sec.headers` | A | INCLUDED | `(nb en-têtes corrects / 6) × 100` — critères déterministes section 8.5 | Connexion impossible avant lecture des headers → `NOT_TESTABLE` | En-têtes de sécurité HTTP |
+| `sec.tls` | A | INCLUDED | `OBSERVED`=100, `PARTIAL`=50, `ABSENT` (critique)=0, aucun hard cap (cf. §7.5) — critères section 8.6 | Échec handshake réseau (timeout/reset) → `NOT_TESTABLE` | Configuration TLS |
 | `sec.exposed_files` | A | INCLUDED | `ABSENT`=100, `OBSERVED`=0 | Tous les chemins bloqués (WAF) → `NOT_TESTABLE` | Chemins sensibles testés |
 | `sec.secrets.pattern_detected` | A | INCLUDED | `ABSENT`=100, `OBSERVED`=0 | Contenu inaccessible → `NOT_TESTABLE` | Motifs de secrets potentiels |
 | `sec.dns.dnssec` | A | INCLUDED | `OBSERVED`=100, `ABSENT`=0 | Résolution DNS impossible → `NOT_TESTABLE` | DNSSEC |
