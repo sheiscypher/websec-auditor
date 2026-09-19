@@ -216,7 +216,7 @@ class ScoreBreakdown(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Enveloppe d'audit (référence — la persistance SQLite en dérive)
+# Enveloppe d'audit (payload renvoyé par /audit, jamais persisté)
 # ---------------------------------------------------------------------------
 
 class AuditPayload(BaseModel):

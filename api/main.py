@@ -6,8 +6,7 @@ Pydantic de requête), déléguer TOUT le travail à services.audit_service, et
 traduire les erreurs (mission complément §5 : "la route ne doit pas
 contenir toute la logique").
 
-NON EXÉCUTÉ dans ce sandbox (fastapi/uvicorn non installables sans réseau).
-Relu manuellement. Commandes de vérification dans README.md.
+Commandes de lancement et de vérification dans README.md.
 """
 
 from __future__ import annotations
