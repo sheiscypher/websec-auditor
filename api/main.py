@@ -24,11 +24,14 @@ from pydantic import BaseModel, Field
 from services.audit_service import AuditInputError, run_audit
 from control_catalog import CATALOG_BY_ID
 from api.rate_limit import (
+    DEFAULT_TRUSTED_PROXY_HOPS,
     RateLimitExceeded,
     check_and_register_request,
     release_audit_slot,
+    select_client_ip,
     try_acquire_audit_slot,
 )
+from security.sanitize import redact_url_for_log, safe_for_log
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("websec_auditor")
@@ -56,6 +59,29 @@ app.add_middleware(
 )
 
 STATIC_DIR = Path(__file__).parent / "static"
+
+MAX_URL_LENGTH = 2048
+
+
+def _read_trusted_proxy_hops() -> int:
+    """Nombre de proxys de confiance devant l'application (TRUSTED_PROXY_HOPS).
+    Valeur par défaut prudente : 1. Bornée à 0-5 ; une valeur invalide
+    retombe sur le défaut. 0 = ignorer X-Forwarded-For.
+
+    Ne pas SURESTIMER cette valeur (l'appelant pourrait alors choisir
+    lui-même son adresse). Pour la calibrer sur Render : mettre LOG_LEVEL=DEBUG
+    le temps d'un test, appeler l'API depuis une adresse connue et comparer
+    avec la ligne « client-ip » du journal."""
+    raw = os.environ.get("TRUSTED_PROXY_HOPS")
+    if raw is None:
+        return DEFAULT_TRUSTED_PROXY_HOPS
+    try:
+        return max(0, min(5, int(raw)))
+    except ValueError:
+        return DEFAULT_TRUSTED_PROXY_HOPS
+
+
+TRUSTED_PROXY_HOPS = _read_trusted_proxy_hops()
 
 
 class AuditRequest(BaseModel):
@@ -85,12 +111,17 @@ def _enrich_finding(finding) -> dict:
 def _get_client_ip(request: Request) -> str:
     """Render (et la plupart des hébergeurs) place l'app derrière un proxy
     inverse — request.client.host y montrerait l'IP du proxy, pas celle de
-    l'appelant réel. X-Forwarded-For, quand présent, contient la vraie IP
-    en premier ; on s'en sert en priorité, avec repli sur request.client."""
+    l'appelant réel. X-Forwarded-For est lu depuis la DROITE (partie ajoutée
+    par le proxy de confiance) ; la partie gauche est fournie par l'appelant
+    et n'est jamais utilisée. Détail dans api/rate_limit.select_client_ip."""
     forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    peer = request.client.host if request.client else None
+    client_ip = select_client_ip(forwarded, peer, TRUSTED_PROXY_HOPS)
+    logger.debug(
+        "client-ip: xff=%s peer=%s hops=%d -> %s",
+        safe_for_log(forwarded), safe_for_log(peer), TRUSTED_PROXY_HOPS, client_ip,
+    )
+    return client_ip
 
 
 @app.get("/health")
@@ -111,6 +142,9 @@ def audit(request: AuditRequest, http_request: Request):
     except RateLimitExceeded as exc:
         raise HTTPException(status_code=429, detail=str(exc)) from exc
 
+    if len(request.url) > MAX_URL_LENGTH:
+        raise HTTPException(status_code=400, detail=f"URL trop longue ({MAX_URL_LENGTH} caractères maximum).")
+
     if not try_acquire_audit_slot():
         raise HTTPException(
             status_code=429,
@@ -126,7 +160,7 @@ def audit(request: AuditRequest, http_request: Request):
         # Erreur technique imprévue : ne jamais renvoyer la trace brute côté
         # client (fuite d'information), mais logger côté serveur pour
         # diagnostic (Render logs).
-        logger.exception("Erreur inattendue pendant l'audit de %s", request.url)
+        logger.exception("Erreur inattendue pendant l'audit de %s", redact_url_for_log(request.url))
         raise HTTPException(
             status_code=500,
             detail="Erreur technique pendant l'audit. Réessayez ou consultez les logs serveur.",

@@ -18,6 +18,7 @@ from dataclasses import dataclass
 
 from enums import ControlResult
 from results import CheckOutcome
+from security.sanitize import normalize_samesite
 
 CONTROL_ID_SECURE_HTTPONLY = "sec.cookies.secure_httponly"
 CONTROL_ID_SAMESITE = "sec.cookies.samesite_distribution"
@@ -53,7 +54,7 @@ def parse_set_cookie_headers(set_cookie_headers: tuple[str, ...]) -> list[Parsed
                 httponly = True
             elif lowered.startswith("samesite"):
                 if "=" in attr:
-                    samesite = attr.split("=", 1)[1].strip()
+                    samesite = normalize_samesite(attr.split("=", 1)[1])
                 else:
                     samesite = None
         cookies.append(ParsedCookie(name=name, secure=secure, httponly=httponly, samesite=samesite))

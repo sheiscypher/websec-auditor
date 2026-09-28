@@ -16,6 +16,7 @@ import dns.resolver
 import dns.exception
 
 from collectors._hard_timeout import HardTimeoutExceeded, run_with_hard_timeout
+from security.sanitize import normalize_dmarc_policy
 
 DEFAULT_DNS_TIMEOUT = 5.0
 _HARD_TIMEOUT = DEFAULT_DNS_TIMEOUT + 5.0
@@ -109,7 +110,7 @@ def _get_dmarc_record_impl(domain: str) -> tuple[bool, str | None]:
                 for part in txt.split(";"):
                     part = part.strip().lower()
                     if part.startswith("p="):
-                        policy = part.split("=", 1)[1]
+                        policy = normalize_dmarc_policy(part.split("=", 1)[1])
                 return True, policy
         return False, None
     except dns.exception.DNSException:

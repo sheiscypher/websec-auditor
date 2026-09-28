@@ -262,6 +262,18 @@ function badgeLabelFor(result) {
   return RESULT_LABELS_FR[result] || result;
 }
 
+// Toute valeur affichée via innerHTML doit passer par esc() : certaines
+// (politique DMARC, cookies, nom du CMS) viennent du site audité et sont donc
+// contrôlées par son propriétaire.
+function esc(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderSecurityAxis(axis) {
   const el = document.getElementById("axis-security");
   if (!axis || axis.status === "NOT_COMPUTABLE") {
@@ -273,9 +285,9 @@ function renderSecurityAxis(axis) {
   const applicable = axis.contributing_controls.length;
   el.innerHTML =
     '<div class="axis-title">Web Security Signals</div>' +
-    '<div class="axis-value">' + score + '/100</div>' +
-    '<div class="bar-bg"><div class="bar-fill" style="width:' + score + '%"></div></div>' +
-    '<div class="axis-meta">Basé sur ' + applicable + '/8 contrôles applicables à cette cible.</div>' +
+    '<div class="axis-value">' + esc(score) + '/100</div>' +
+    '<div class="bar-bg"><div class="bar-fill" style="width:' + esc(score) + '%"></div></div>' +
+    '<div class="axis-meta">Basé sur ' + esc(applicable) + '/8 contrôles applicables à cette cible.</div>' +
     '<div class="axis-note">Mesure la présence de pratiques de configuration technique de base, publiquement ' +
     'observables — ne mesure ni le niveau global de sécurité, ni la probabilité de compromission, ni un ' +
     'niveau de conformité. Ne couvre pas l\'authentification, la gestion de session, ni les vulnérabilités ' +
@@ -293,8 +305,8 @@ function renderPrivacyAxis(axis) {
   const favorable = axis.contributing_controls.filter(function(c) { return c.result === "OBSERVED"; }).length;
   el.innerHTML =
     '<div class="axis-title">Privacy Technical Signals</div>' +
-    '<div class="axis-value">' + (axis.signal_level || "") + '</div>' +
-    '<div class="axis-meta">' + favorable + '/' + total + ' éléments observables détectés (pages légales, CMP).</div>' +
+    '<div class="axis-value">' + esc(axis.signal_level) + '</div>' +
+    '<div class="axis-meta">' + esc(favorable) + '/' + esc(total) + ' éléments observables détectés (pages légales, CMP).</div>' +
     '<div class="axis-note">Mesure la présence de signaux techniques observables, pas une évaluation de ' +
     'conformité RGPD. L\'absence d\'un signal ne constitue pas une preuve de non-conformité.</div>';
 }
@@ -303,7 +315,7 @@ function renderAiAxis(panel) {
   const el = document.getElementById("axis-ai");
   el.innerHTML =
     '<div class="axis-title">AI &amp; Governance Signals</div>' +
-    '<div class="axis-meta">' + panel.signals_observed_count + '/' + panel.signals_total_count +
+    '<div class="axis-meta">' + esc(panel.signals_observed_count) + '/' + esc(panel.signals_total_count) +
     ' signaux observés sur la surface publique — n\'indique pas l\'absence d\'usage de l\'IA.</div>' +
     '<div class="axis-note">Jamais scoré. Ces signaux ne permettent aucune conclusion de conformité ou de ' +
     'classification au regard de l\'AI Act.</div>';
@@ -317,9 +329,9 @@ function renderKeyFindings(keyFindings) {
   }
   el.innerHTML = keyFindings.map(function(kf) {
     return '<div class="key-finding">' +
-      (kf.risk_category ? '<div class="key-finding-category">' + kf.risk_category + '</div>' : '') +
-      '<div class="key-finding-constat">' + kf.constat + '</div>' +
-      (kf.recommendation ? '<div class="key-finding-recommendation">' + kf.recommendation + '</div>' : '') +
+      (kf.risk_category ? '<div class="key-finding-category">' + esc(kf.risk_category) + '</div>' : '') +
+      '<div class="key-finding-constat">' + esc(kf.constat) + '</div>' +
+      (kf.recommendation ? '<div class="key-finding-recommendation">' + esc(kf.recommendation) + '</div>' : '') +
       '</div>';
   }).join("");
 }
@@ -333,13 +345,13 @@ function renderFindings(findings) {
       ? "scoré (poids " + (f.weight * 100).toFixed(1) + "%)"
       : "informatif — non scoré";
     return '<div class="finding">' +
-      '<div class="badge ' + badgeClass + '">' + badgeLabel + '</div>' +
-      '<div class="finding-label">' + f.resolved_label +
+      '<div class="badge ' + esc(badgeClass) + '">' + esc(badgeLabel) + '</div>' +
+      '<div class="finding-label">' + esc(f.resolved_label) +
       '<div class="finding-meta">' +
-      '<span class="domain-chip">' + (DOMAIN_LABELS_FR[f.domain] || f.domain) + '</span>' +
-      '<span>' + (f.report_label || f.control_id) + '</span>' +
-      '<span>Preuve : niveau ' + (f.evidence_level || "?") + '</span>' +
-      '<span>' + scoredLabel + '</span>' +
+      '<span class="domain-chip">' + esc(DOMAIN_LABELS_FR[f.domain] || f.domain) + '</span>' +
+      '<span>' + esc(f.report_label || f.control_id) + '</span>' +
+      '<span>Preuve : niveau ' + esc(f.evidence_level || "?") + '</span>' +
+      '<span>' + esc(scoredLabel) + '</span>' +
       '</div></div></div>';
   }).join("");
 }
@@ -348,11 +360,11 @@ function renderEvidence(findings) {
   const el = document.getElementById("evidence-list");
   el.innerHTML = findings.map(function(f) {
     return '<div class="evidence-item">' +
-      '<div class="evidence-control">' + (f.report_label || f.control_id) + '</div>' +
-      '<div class="evidence-row"><b>Preuve :</b> ' + (f.evidence || "—") + '</div>' +
-      '<div class="evidence-row"><b>Méthode :</b> ' + (f.detection_method || "—") + '</div>' +
-      (f.limitation ? '<div class="evidence-row"><b>Limite :</b> ' + f.limitation + '</div>' : '') +
-      (f.reference ? '<div class="evidence-row"><b>Référence :</b> ' + f.reference + '</div>' : '') +
+      '<div class="evidence-control">' + esc(f.report_label || f.control_id) + '</div>' +
+      '<div class="evidence-row"><b>Preuve :</b> ' + esc(f.evidence || "—") + '</div>' +
+      '<div class="evidence-row"><b>Méthode :</b> ' + esc(f.detection_method || "—") + '</div>' +
+      (f.limitation ? '<div class="evidence-row"><b>Limite :</b> ' + esc(f.limitation) + '</div>' : '') +
+      (f.reference ? '<div class="evidence-row"><b>Référence :</b> ' + esc(f.reference) + '</div>' : '') +
       '</div>';
   }).join("");
 }
@@ -366,8 +378,8 @@ function renderHumanReview(findings) {
   }
   el.innerHTML = toReview.map(function(f) {
     return '<div class="human-review-item">' +
-      '<div class="key-finding-constat">' + f.resolved_label + '</div>' +
-      '<div class="finding-meta"><span>' + (f.report_label || f.control_id) + '</span></div>' +
+      '<div class="key-finding-constat">' + esc(f.resolved_label) + '</div>' +
+      '<div class="finding-meta"><span>' + esc(f.report_label || f.control_id) + '</span></div>' +
       '</div>';
   }).join("");
 }
@@ -403,7 +415,7 @@ form.addEventListener("submit", async function(e) {
     renderHumanReview(data.findings);
 
     document.getElementById("methodology-notes").innerHTML =
-      data.score_breakdown.methodology_notes.map(function(n) { return "<div>• " + n + "</div>"; }).join("");
+      data.score_breakdown.methodology_notes.map(function(n) { return "<div>• " + esc(n) + "</div>"; }).join("");
 
     resultsBox.style.display = "block";
   } catch (err) {

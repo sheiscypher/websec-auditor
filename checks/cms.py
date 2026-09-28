@@ -13,6 +13,7 @@ from typing import Optional
 
 from enums import ControlResult
 from results import CheckOutcome
+from security.sanitize import sanitize_technology_name
 
 CONTROL_ID_DETECTION = "sec.cms_detection"
 CONTROL_ID_CVE = "sec.cms_cve_mapping"
@@ -26,7 +27,10 @@ class CMSDetectionEvidence:
 
 
 def evaluate_cms_detection(evidence: CMSDetectionEvidence) -> CheckOutcome:
-    if evidence.name is None:
+    # Le nom vient du HTML de la cible : jamais utilisé tel quel.
+    name = sanitize_technology_name(evidence.name)
+    version = sanitize_technology_name(evidence.version, max_len=30)
+    if name is None:
         return CheckOutcome(
             control_id=CONTROL_ID_DETECTION,
             result=ControlResult.NOT_TESTABLE,
@@ -38,11 +42,11 @@ def evaluate_cms_detection(evidence: CMSDetectionEvidence) -> CheckOutcome:
     return CheckOutcome(
         control_id=CONTROL_ID_DETECTION,
         result=ControlResult.OBSERVED,
-        evidence=f"Technologie identifiée : {evidence.name}"
-        + (f" (version {evidence.version})" if evidence.version else ""),
+        evidence=f"Technologie identifiée : {name}"
+        + (f" (version {version})" if version else ""),
         detection_method="Fingerprint (headers, meta generator, fichiers caractéristiques).",
         score_contribution=None,  # informatif
-        phrasing_context={"name": evidence.name},
+        phrasing_context={"name": name},
     )
 
 
@@ -74,7 +78,10 @@ def evaluate_cve_mapping(
     return CheckOutcome(
         control_id=CONTROL_ID_CVE,
         result=ControlResult.OBSERVED,
-        evidence=f"CVE potentiellement applicable(s) à {evidence.name} {evidence.version} : {', '.join(known_cves)}.",
+        evidence=(
+            f"CVE potentiellement applicable(s) à {sanitize_technology_name(evidence.name) or 'technologie non identifiée'} "
+            f"{sanitize_technology_name(evidence.version, max_len=30) or ''} : {', '.join(known_cves)}."
+        ),
         detection_method="Rattachement CVE basé sur la version détectée (NVD ou liste statique).",
         limitation="Le rattachement se base sur le numéro de version déclaré ; il ne confirme pas l'exploitabilité réelle.",
         score_contribution=None,
